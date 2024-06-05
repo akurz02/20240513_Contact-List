@@ -6,25 +6,29 @@ const getState = ({ getStore, getActions, setStore }) => {
 		actions: {
 
 			loadAgendaContacts: async () => {
-				const response = await fetch("https://playground.4geeks.com/contact/agenda/akurz02");
+				const response = await fetch("https://playground.4geeks.com/contact/agendas/akurz02");
 				if(!response.ok) {
-					throw new Error(response.status, response.statusText)
+					const requestOptions = {
+						method: "POST",
+						redirect: "follow"
+					  };
+					fetch("https://playground.4geeks.com/contact/agendas/akurz02", requestOptions)
+					//getActions().loadAgendaContacts()
 				}
 				const data = await response.json();
 				setStore({contacts: data.contacts});
 			},
 
-			contactCreate: async (name,phone,email,address) => {
+			contactCreate: async (name,phone,email,address,navigate) => {
 				const store = getStore();
 				const response = await fetch(`https://playground.4geeks.com/contact/agendas/akurz02/contacts/`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json"},
 					body: JSON.stringify({
-						full_name: name,
+						name: name,
 						phone: phone,
 						email: email,
 						address: address,
-						agenda_slug: "akurz02",
 					}),
 				});
 				if(!response.ok) {
@@ -34,6 +38,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 				getActions().loadAgendaContacts();
 				const data = await response.json();
 		  		setStore({ contacts: [...store.contacts, data] });
+				navigate("/");
 			},
 			
 			deleteContact: async (id) => {
@@ -45,29 +50,36 @@ const getState = ({ getStore, getActions, setStore }) => {
 					headers: { "Content-Type": "application/json" },
 				  }
 				);
-				const data = await response.json();
+				if(!response.ok) {
+					throw new Error(response.status, response.statusText)
+				}
+				const data = await response.text();
 				setStore({
 				  contacts: store.contacts.filter((contact) => contact.id !== id),
 				});
 			},
-			editContact: async (id, name, phone, email, address) => {
-				const store = getStore();
+			editContact: async (id, name, phone, email, address, navigate) => {
+				const store = getStore(id);
 				const response = await fetch(
 				  "https://playground.4geeks.com/contact/agendas/akurz02/contacts/" + id,
 				  {
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
-					  full_name: name,
+					  name: name,
 					  phone: phone,
 					  email: email,
 					  address: address,
-					  agenda_slug: "akurz02",
 					}),
 				  }
 				);
 				const data = await response.json();
-				setStore({ contacts: [...store.contacts, data] });
+
+				//setStore({ contacts: [...store.contacts, data] });
+				getActions().loadAgendaContacts()
+
+				navigate("/");
+				// return data;
 			}
 		}
 	};
